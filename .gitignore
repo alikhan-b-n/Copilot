@@ -11,3 +11,4 @@ riderModule.iml
 .idea/
 *.patch
 *.xml
+Copilot.Api/appsettings.json
