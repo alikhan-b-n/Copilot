@@ -1,0 +1,86 @@
+@page "/altegio"
+@using OneOf
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Admin.Components.AltegioCompany
+@inject ModalService ModalService
+@inject AltegioCompanyApi AltegioCompanyApi
+@inject ILocalStorageService LocalStorageService
+
+<Button Type="@ButtonType.Primary" Color="Color.Green7" OnClick="() => OpenTemplate(Guid.Empty)" Icon="@IconType.Outline.Plus">Create new</Button>
+
+<br/>
+<br/>
+
+<Table DataSource="_listOfData" TItem="AltegioCompanyResponse" Bordered>
+    <ChildContent Context="data">
+        <Column TData="string" Title="Id">
+            <Tooltip Title="@data.Id.ToString("N")">
+                @(data.Id.ToString("N")[..4] + "...")
+            </Tooltip>
+        </Column>
+        <Column TData="string" Title="Company name">
+            @data.CompanyName
+        </Column>
+        <Column TData="string" Title="Company id">
+            @data.CompanyId
+        </Column>
+
+        <ActionColumn Style="display: flex; align-content: center;" Title="Actions">
+            <Popconfirm Style="margin-left: 10px; margin-right: 10px" Title="Delete"
+                        OnConfirm="@(() => Delete(data.Id))"
+                        OkText="Yes, delete"
+                        CancelText="No">
+                <Button Type="@ButtonType.Primary"
+                        Color="Color.Red7"
+                        Icon="@IconType.Outline.Delete">
+                </Button>
+            </Popconfirm>
+        </ActionColumn>
+    </ChildContent>
+</Table>
+
+@code{
+    List<AltegioCompanyResponse>? _listOfData = new();
+    
+    protected override async void OnInitialized()
+    {
+        _claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        _listOfData = await AltegioCompanyApi.SetDefaultParameters(_claims).GetAll();
+        
+        StateHasChanged();
+    }
+
+    private ModalRef _modalRef = null!;
+    private UserClaims _claims = null!;
+
+    private async void Delete(Guid id)
+    {
+        await AltegioCompanyApi.SetDefaultParameters(_claims).Delete(id);
+        OnInitialized();
+    }
+
+    private async Task OpenTemplate(Guid id)
+    {
+        var templateOptions = new AltegioOptions();
+
+        var modalConfig = new ModalOptions
+        {
+            Footer = new OneOf<string, RenderFragment>(),
+            Title = "Company Creation"
+        };
+
+        _modalRef = await ModalService
+            .CreateModalAsync<AltegioCreationModalForm, AltegioOptions>
+                (modalConfig, templateOptions);
+
+        _modalRef.OnClose = () => {
+            OnInitialized();
+            return Task.CompletedTask;
+        };
+    }
+
+}

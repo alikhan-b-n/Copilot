@@ -1,0 +1,29 @@
+@page "/copilots/{Id:guid}"
+
+<div style="padding: 20px;">
+
+    <GridRow Wrap Justify="space-around" Gutter="(24, 16)">
+        <GridCol Xs="24" Sm="24" Md="12" Lg="14" Xl="14">
+            <Tabs Type="@TabType.Card" Style="width: 100%">
+                <TabPane Key="1" Tab="Settings">
+                    <BotSettingsCard BotId="Id"/>
+                </TabPane>
+                <TabPane Key="2" Tab="Plugins">
+                    <PluginsCard BotId="Id"/>
+                </TabPane>
+                <TabPane Key="3" Tab="Dialogues">
+                    <DialoguesCard BotId="Id"/>
+                </TabPane>
+            </Tabs>
+        </GridCol>
+
+        <GridCol Xs="24" Sm="24" Md="12" Lg="10" Xl="10">
+            <TestChatCard BotId="Id"/>
+        </GridCol>
+    </GridRow>
+
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+}

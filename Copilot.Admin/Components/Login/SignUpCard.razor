@@ -1,0 +1,128 @@
+@using System.ComponentModel.DataAnnotations
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.Services
+
+@inject MessageService Message
+@inject NavigationManager NavigationManager
+@inject UserApi UserApi
+@inject ILocalStorageService LocalStorageService
+
+
+<Card Style="width: 400px; margin: 0 auto;" Hoverable>
+
+    <TitleTemplate>
+        <Flex Align="center" Vertical>
+            <Avatar Size="3rem" Src="img/logo/dark.png"/>
+            <br>
+            <span style="align-content: center;">Create new Account</span>
+        </Flex>
+    </TitleTemplate>
+
+    <ChildContent>
+        <Form @ref="Form"
+              Model="@_model"
+              Layout="vertical"
+              OnFinish="OnFinish"
+              OnFinishFailed="OnFinishFailed">
+            <FormItem Label="Email">
+                <Input @bind-Value="@context.Email"/>
+            </FormItem>
+            <FormItem Label="Password">
+                <InputPassword @bind-Value="@context.Password"/>
+            </FormItem>
+            <FormItem Label="Retry Password">
+                <InputPassword @bind-Value="@context.RetryPassword"/>
+            </FormItem>
+            <FormItem>
+                <Button Type="@ButtonType.Primary" Color="Color.Blue10" HtmlType="submit" Block>
+                    Sign Up
+                </Button>
+            </FormItem>
+        </Form>
+
+        <Divider Plain>or</Divider>
+
+        <Flex Justify="center">
+            <Text Style="align-content: center" Disabled>Have account?</Text>
+            <Button Type="@ButtonType.Link" OnClick="GoToLogin">Login</Button>
+        </Flex>
+
+    </ChildContent>
+
+</Card>
+
+@code {
+
+    private readonly bool _validateOnChange = false;
+    private readonly FormValidateMode _validateMode = FormValidateMode.Complex;
+    
+    public class Model
+    {
+        [Required] [EmailAddress] public string Email { get; set; }
+
+        [Required] [MinLength(3)] public string Password { get; set; }
+        
+        [Required] [MinLength(3)] [Compare(nameof(Password))] 
+        public string RetryPassword { get; set; }
+    }
+
+    [Parameter] public Form<Model>? Form { get; set; }
+
+    private readonly Model _model = new();
+
+    private async Task<string> GetToken()
+    {
+        await UserApi.SignUp(new SignUpParameter(_model.Email, _model.Password));
+
+        var result = await UserApi.SignIn(
+            new LoginParameter(_model.Email, _model.Password));
+
+        return result?.AccessToken ?? throw new ArgumentException("No token");
+    }
+
+    private async Task OnFinish(EditContext editContext)
+    {
+        Form.Loading = true;
+        var errorMessage = string.Empty;
+
+        try
+        {
+            var token = await GetToken();
+
+            var claims = new UserClaims()
+            {
+                Token = token,
+                Email = _model.Email,
+                ExpiredAt = DateTime.UtcNow.AddHours(3)
+            };
+
+            await LocalStorageService.SetAsync(nameof(UserClaims), claims);
+
+            await Message.Success("Welcome!");
+
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            Console.WriteLine(e.Message);
+        }
+
+        if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            await Message.Error("This Email is already registered");
+        }
+
+        Form.Loading = false;
+    }
+
+    private void GoToLogin()
+    {
+        NavigationManager.NavigateTo("login");
+    }
+    
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Message.Error("Incorrect Data input, try again");
+    }
+}

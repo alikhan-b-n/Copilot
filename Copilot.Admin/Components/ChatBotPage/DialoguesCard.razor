@@ -1,0 +1,65 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+@inject DialoguesApi DialoguesApi
+@inject IMessageService MessageService
+@inject ILocalStorageService LocalStorageService
+
+<Card Hoverable Title="Dialogues with Bot">
+    <Table
+        TItem="DialogueResponse"
+        DataSource="@_data"
+        PageSize="10"
+        Bordered=@false
+        Size="TableSize.Small"
+        RowKey="x => x.Id">
+
+        <PropertyColumn Property="c => c.PhoneNumber" Sortable/>
+        <PropertyColumn Property="c => c.CreatedAt" Format="yyyy-MM-dd HH:mm" Sortable/>
+
+        <PropertyColumn Title="Active" Property="c => c.IsActive">
+            <Switch @bind-Value="@context.IsActive" OnChange="() => ChangeStatus(context.Id)"></Switch>
+        </PropertyColumn>
+        
+        <ActionColumn Title="">
+            <Space>
+                <SpaceItem>
+                    <Button Danger OnClick="() => Delete(context.Id)">Delete</Button>
+                </SpaceItem>
+            </Space>
+        </ActionColumn>
+    </Table>
+</Card>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+    private bool _loaded = false;
+
+    private List<DialogueResponse>? _data;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+            _data = await DialoguesApi.SetDefaultParameters(claims).GetAll(BotId) ?? throw new Exception("Failed to load");
+
+            _loaded = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ChangeStatus(Guid id)
+    {
+        await DialoguesApi.ChangeStatus(BotId, id);
+        await OnAfterRenderAsync(true);
+        await MessageService.Success("Status changed");
+    }
+
+    private async Task Delete(Guid id)
+    {
+        await DialoguesApi.Delete(BotId, id);
+        await OnAfterRenderAsync(true);
+        await MessageService.Success("Deleted");
+    }
+}

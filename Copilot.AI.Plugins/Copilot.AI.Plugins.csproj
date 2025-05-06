@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Copilot.Ai.Utils\Copilot.Ai.Utils.csproj" />
+      <ProjectReference Include="..\Copilot.Altegio.Api\Copilot.Altegio.Api.csproj" />
+      <ProjectReference Include="..\Copilot.Experimental.Agents.Extensions\Copilot.Experimental.Agents.Extensions.csproj" />
+      <ProjectReference Include="..\Copilot.Infrastructure\Copilot.Infrastructure.csproj" />
+      <ProjectReference Include="..\Copilot.Utils\Copilot.Utils.csproj" />
+      <ProjectReference Include="..\Copilot.WhatsApp.Api\Copilot.WhatsApp.Api.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="F23.StringSimilarity" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    </ItemGroup>
+
+</Project>

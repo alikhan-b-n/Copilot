@@ -1,0 +1,133 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Parameters
+@using Copilot.Contracts.Responses
+
+@inject PluginApi PluginApi
+@inject WhatsAppApi WhatsAppApi
+@inject ILocalStorageService LocalStorageService
+
+<Card Title="Operator Plugin" Style="max-width:500px;">
+    <Extra>
+        @if (_data.OperatorPluginId is null)
+        {
+            <Tag Icon="disconnect" Color="@PresetColor.Red.ToString()">Disabled</Tag>
+        }
+        else
+        {
+            <Tag Icon="check-circle" Color="@PresetColor.Green.ToString()">Active</Tag>
+        }
+    </Extra>
+    <ChildContent>
+
+        <Form Model="@_data.OperatorPlugin"
+              OnFinish="UpsertOperatorPlugin"
+              Layout="vertical">
+
+            <FormItem Label="Phone Numbers of Operator:">
+                <Select Mode="tags"
+                        Placeholder="Please select"
+                        @bind-Values="@context.NumberList"
+                        TItemValue="string"
+                        TItem="string"
+                        EnableSearch>
+                    <SelectOptions>
+                        @foreach (var item in context.NumberList)
+                        {
+                            <SelectOption TItemValue="string" TItem="string" Value=@item Label=@item/>
+                        }
+                    </SelectOptions>
+                </Select>
+            </FormItem>
+
+            <FormItem Label="WhatsApp Account:">
+                <Select TItem="WhatsAppAccount"
+                        TItemValue="Guid"
+                        DataSource="@_listOfWhatsAppAccounts"
+                        @bind-Value="@context.WhatsAppAccountId"
+                        LabelName="@nameof(WhatsAppAccount.PhoneNumber)"
+                        ValueName="@nameof(WhatsAppAccount.Id)"
+                        Placeholder="Select a id"
+                        DefaultActiveFirstOption="false">
+                </Select>
+            </FormItem>
+
+            <FormItem>
+                <Button Type="@ButtonType.Primary" Block HtmlType="submit">
+                    Save
+                </Button>
+                <br>
+                @if (_data.OperatorPlugin is not null)
+                {
+                    <Button Danger Block OnClick="() => Delete(_data.OperatorPluginId)">
+                        Disable
+                    </Button>
+                }
+            </FormItem>
+
+        </Form>
+
+    </ChildContent>
+</Card>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+
+    private List<WhatsAppAccount> _listOfWhatsAppAccounts = [];
+
+    private AllPluginsModel _data = new()
+    {
+        OperatorPlugin = new()
+    };
+
+    public class WhatsAppAccount
+    {
+        public string? PhoneNumber { get; set; }
+
+        public Guid Id { get; set; }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+            _data = await PluginApi.SetDefaultParameters(claims).GetAll(BotId) ?? throw new Exception("Failed to load");
+
+            _data.OperatorPlugin ??= new OperatorPluginParameter();
+            
+            var allWhatsAppAccounts = await WhatsAppApi.SetDefaultParameters(claims).GetAllWhatsAppAccounts();
+
+            _listOfWhatsAppAccounts = (allWhatsAppAccounts ?? [])
+                .Select(x => new WhatsAppAccount
+                {
+                    Id = x.Id,
+                    PhoneNumber = x.PhoneNumber
+                })
+                .ToList();
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task UpsertOperatorPlugin()
+    {
+        if (_data.OperatorPlugin is not null)
+        {
+            await PluginApi.UpsertOperatorPlugin(BotId, _data.OperatorPlugin!);
+            await OnAfterRenderAsync(true);
+        }
+    }
+
+    private async Task Delete(Guid? id)
+    {
+        if (id is null)
+        {
+            return;
+        }
+
+        await PluginApi.DeletePlugin(BotId, (Guid)id);
+        await OnAfterRenderAsync(true);
+    }
+
+}

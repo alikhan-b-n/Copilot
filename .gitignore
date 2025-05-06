@@ -1,0 +1,13 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/.idea.Copilot/.idea/.name
+.idea/.idea.Copilot/.idea/indexLayout.xml
+.idea/.idea.Copilot/.idea/vcs.xml
+*.xml
+.idea/.idea.Copilot/.idea/.name
+.idea/
+*.patch
+*.xml

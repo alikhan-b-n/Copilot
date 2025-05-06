@@ -1,0 +1,104 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Parameters
+@using Copilot.Contracts.Responses
+
+@inject PluginApi PluginApi
+@inject ILocalStorageService LocalStorageService
+@inject AltegioCompanyApi AltegioCompanyApi
+
+<Card Title="Salon Plugin" Style="max-width:500px;">
+    <Extra>
+        @if (_data.SalonPluginId is null)
+        {
+            <Tag Icon="disconnect" Color="@PresetColor.Red.ToString()">Disabled</Tag>
+        }
+        else
+        {
+            <Tag Icon="check-circle" Color="@PresetColor.Green.ToString()">Active</Tag>
+        }
+    </Extra>
+    <ChildContent>
+
+        <Form Model="@_data"
+              OnFinish="UpsertSalonPlugin"
+              Layout="vertical">
+
+            <FormItem Label="Altegio Company:">
+                <Select TItem="AltegioCompanyResponse"
+                        TItemValue="int"
+                        DataSource="@_listOfAltegioCompanies"
+                        @bind-Value="@context.SalonPlugin!.CompanyId"
+                        LabelName="@nameof(AltegioCompanyResponse.CompanyName)"
+                        ValueName="@nameof(AltegioCompanyResponse.CompanyId)"
+                        Placeholder="Select Altegio Company"
+                        DefaultActiveFirstOption="false">
+                </Select>
+            </FormItem>
+
+            <FormItem>
+                <Button Type="@ButtonType.Primary" Block HtmlType="submit">
+                    Save
+                </Button>
+                <br>
+                @if (_data.SalonPluginId is not null)
+                {
+                    <Button Danger Block OnClick="() => Delete(_data.SalonPluginId)">
+                        Disable
+                    </Button>
+                }
+            </FormItem>
+
+        </Form>
+
+    </ChildContent>
+</Card>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+
+    private List<AltegioCompanyResponse> _listOfAltegioCompanies = [];
+
+    private AllPluginsModel _data = new()
+    {
+        SalonPlugin = new()
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+            _data = await PluginApi.SetDefaultParameters(claims).GetAll(BotId) ?? throw new Exception("Failed to load");
+
+            _data.SalonPlugin ??= new SalonPluginParameter();
+            
+            var allAltegioAccounts = await AltegioCompanyApi.SetDefaultParameters(claims).GetAll();
+            _listOfAltegioCompanies = allAltegioAccounts ?? new List<AltegioCompanyResponse>();
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task UpsertSalonPlugin()
+    {
+        if (_data.SalonPlugin is not null)
+        {
+            await PluginApi.UpsertSalonPlugin(BotId, _data.SalonPlugin!);
+            await OnAfterRenderAsync(true);
+        }
+    }
+
+
+    private async Task Delete(Guid? id)
+    {
+        if (id is null)
+        {
+            return;
+        }
+
+        await PluginApi.DeletePlugin(BotId, (Guid)id);
+        await OnAfterRenderAsync(true);
+    }
+
+}

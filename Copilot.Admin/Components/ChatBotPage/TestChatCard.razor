@@ -1,0 +1,88 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<Card Bordered="false" Hoverable Title="Chat" Style="max-width: 400px;">
+    <div id="messageList" class="scrollable-container">
+        <AntList DataSource="@_messages" TItem="Message">
+            <ListItem>
+                <Comment Author="@context.Role" Avatar="@(context.Role == "Bot" ? _aiAvatar : _userAvatar)" Content="@context.Content"/>
+            </ListItem>
+        </AntList>
+    </div>
+
+    <Input
+        TValue="string"
+        OnPressEnter="Callback"
+        @bind-Value="_input"
+        Placeholder="Type your message here..."
+        AllowClear
+        Size="Large">
+
+        <Suffix>
+            @if (_waitingAnswer)
+            {
+                <Icon Type="loading" Theme="outline"/>
+            }
+        </Suffix>
+
+    </Input>
+</Card>
+
+<style>
+    .scrollable-container {
+        height: 500px;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+</style>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+
+    string _aiAvatar = "https://cdn-icons-png.flaticon.com/512/11504/11504957.png";
+    string _userAvatar = "https://cdn-icons-png.flaticon.com/512/4532/4532510.png";
+
+    private Guid _testConversationId = Guid.NewGuid();
+    private string _input = "";
+    private bool _waitingAnswer = false;
+    List<Message> _messages = [new("Bot", "Hi! How can i assist you today?")];
+
+    record Message(string Role, string Content);
+
+    private async Task Callback()
+    {
+        await _hubConnection.SendAsync("SendMessage", 
+            BotId, 
+            _testConversationId.ToString("N"), 
+            _input);
+        
+        _messages.Add(new("You", _input));
+
+        _input = "";
+        await JsRuntime.InvokeVoidAsync("scrollToBottom", "messageList");
+        _waitingAnswer = true;
+
+        StateHasChanged();
+    }
+
+    private HubConnection _hubConnection = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Configuration["WebApiUrl"]! + "chathub")
+            .Build();
+
+        _hubConnection.On<string>("ReceiveMessage", async message =>
+        {
+            _messages.Add(new("Bot", message));
+            _waitingAnswer = false;
+            await JsRuntime.InvokeVoidAsync("scrollToBottom", "messageList");
+            StateHasChanged();
+        });
+
+        await _hubConnection.StartAsync();
+    }
+}

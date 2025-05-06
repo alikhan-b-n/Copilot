@@ -1,0 +1,76 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Admin.Data.Services
+
+@inherits FeedbackComponent<Copilot.Admin.Data.ComponentOptions.AltegioOptions>
+@inject MessageService Message
+@inject AltegioCompanyApi AltegioCompanyApi
+@inject ILocalStorageService LocalStorageService
+
+<Form
+    @ref="_form"
+    ValidateMode="FormValidateMode.Default"
+    ValidateOnChange="false"
+    Model="@_model.Context"
+    Layout="@FormLayout.Vertical"
+    OnFinish="OnFinish"
+    OnFinishFailed="OnFinishFailed">
+
+    <div>
+        <Steps Direction="vertical" Current="3" Style="max-width: 320px">
+            <Step Title="Link your Integration with Altegio" Description="Visit https://app.alteg.io/e/mp_340_ai_copilot and click on the 'Connect' button. Make sure to read and accept the terms and conditions."/>
+            <Step Title="Navigate to the Altegio Summary Page" Description="On the left-hand side navigation panel of the website, select 'Overview' and then click on 'Summary'."/>
+            <Step Title="Copy Altegio Company ID" Description="Duplicate the Location ID. Remember, do not include the '#' sign - copy the numeric part only."/>
+        </Steps>
+    </div>
+    
+    <FormItem Label="Company name:">
+        <Input @bind-Value="@context.CompanyName"/>
+    </FormItem>
+    <FormItem Label="Company id:">
+        <Input @bind-Value="@context.CompanyId">
+    </FormItem>
+    <FormItem>
+        <Button Type="@ButtonType.Primary" HtmlType="submit">Create</Button>
+    </FormItem>
+</Form>
+
+<br/>
+<br/>
+
+
+@code {
+    [Parameter] public string RequestUrl { get; set; }
+
+    private Form<CreateAltegioCompanyParams> _form = null!;
+    private AltegioOptions _model = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = Options ?? new AltegioOptions();
+
+        await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        await InvokeAsync(StateHasChanged);
+        await base.OnInitializedAsync();
+    }
+
+    private async void OnFinish(EditContext editContext)
+    {
+        if (!_form.Validate())
+        {
+            return;
+        }
+
+        var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        await AltegioCompanyApi.SetDefaultParameters(claims).Create(_model.Context);
+
+        _ = FeedbackRef.CloseAsync();
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Message.Error("Validation Error");
+    }
+}

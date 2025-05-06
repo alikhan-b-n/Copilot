@@ -1,0 +1,16 @@
+@page "/SignOut"
+@using Copilot.Admin.Data.Services
+
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await LocalStorageService.RemoveAsync(nameof(UserClaims));
+
+        await InvokeAsync(StateHasChanged);
+        
+        NavigationManager.NavigateTo("/", true);
+    }
+}

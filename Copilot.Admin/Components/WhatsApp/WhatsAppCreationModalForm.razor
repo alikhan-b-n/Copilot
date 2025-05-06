@@ -1,0 +1,79 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+
+@inherits FeedbackComponent<Copilot.Admin.Data.ComponentOptions.WhatsAppComponentOptions>
+@inject MessageService Message
+@inject WhatsAppApi WhatsAppApi
+@inject ChatBotApi ChatBotApi
+@inject ILocalStorageService LocalStorageService
+
+<Form
+    @ref="_form"
+    ValidateMode="FormValidateMode.Default"
+    ValidateOnChange="false"
+    Model="@_model.Context"
+    Layout="@FormLayout.Vertical"
+    OnFinish="OnFinish"
+    OnFinishFailed="OnFinishFailed">
+    <FormItem Label="Phone number:">
+        <Input @bind-Value="@context.PhoneNumber"/>
+    </FormItem>
+    <FormItem Label="Chatbots">
+        <Select @bind-Value="@context.BotId"
+                DataSource="_chatBots"
+                LabelName="@nameof(CopilotChatBotResponse.Title)"
+                ValueName="@nameof(CopilotChatBotResponse.Id)"
+                DefaultActiveFirstOption="true"
+                EnableSearch
+                Placeholder="Select ChatBot">
+        </Select>
+    </FormItem>
+    <FormItem>
+        <Button Type="@ButtonType.Primary" HtmlType="submit">Create</Button>
+    </FormItem>
+</Form>
+
+<br/>
+<br/>
+
+
+@code {
+    [Parameter] public string RequestUrl { get; set; }
+
+    private Form<CreateWhatsAppAccountParams> _form = null!;
+    private List<CopilotChatBotResponse> _chatBots = new();
+    private WhatsAppComponentOptions _model = null!;
+    private UserClaims _claims = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = base.Options ?? new WhatsAppComponentOptions();
+
+        _claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+        _chatBots = await ChatBotApi.SetDefaultParameters(_claims).GetAll() ?? [];
+
+        await InvokeAsync(StateHasChanged);
+        await base.OnInitializedAsync();
+    }
+
+    private async void OnFinish(EditContext editContext)
+    {
+        if (!_form.Validate())
+        {
+            return;
+        }
+
+        var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        await WhatsAppApi.SetDefaultParameters(claims).CreateInstance(_model.Context);
+
+        _ = base.FeedbackRef.CloseAsync();
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Message.Error("Validation Error");
+    }
+}

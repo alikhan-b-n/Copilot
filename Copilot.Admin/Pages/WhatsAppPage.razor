@@ -1,0 +1,120 @@
+@page "/source"
+@using OneOf
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Admin.Components.WhatsApp
+@inject ModalService ModalService
+@inject WhatsAppApi WhatsAppApi
+@inject ILocalStorageService LocalStorageService
+
+<Button Type="@ButtonType.Primary" Color="Color.Green7" OnClick="() => OpenTemplate(Guid.Empty)" Icon="@IconType.Outline.Plus">Create new</Button>
+
+<br/>
+<br/>
+
+<Table DataSource="_listOfData" TItem="WhatsAppAccountResponse" Bordered>
+    <ChildContent Context="data">
+        <Column TData="string" Title="Id">
+            <Tooltip Title="@data.Id.ToString("N")">
+                @(data.Id.ToString("N")[..4] + "...")
+            </Tooltip>
+        </Column>
+        <Column TData="string" Title="Phone Number">
+            @data.PhoneNumber
+        </Column>
+        <Column TData="string" Title="Bot model">
+            @data.BotTitle
+        </Column>
+
+        <ActionColumn Style="display: flex; align-content: center;" Title="Actions">
+            <Popconfirm Style="margin-left: 10px; margin-right: 10px" Title="Whatsapp qr"
+                        OnConfirm="@(() => GetQr(data.Id, data.BotId))"
+                        OkText="Yes, add whatsapp"
+                        CancelText="No">
+                <Button Type="@ButtonType.Primary"
+                        Color="Color.Green1"
+                        Icon="@IconType.Outline.WhatsApp">
+                </Button>
+            </Popconfirm>
+            <Popconfirm Style="margin-left: 10px; margin-right: 10px" Title="Delete"
+                        OnConfirm="@(() => Delete(data.Id))"
+                        OkText="Yes, delete"
+                        CancelText="No">
+                <Button Type="@ButtonType.Primary"
+                        Color="Color.Red7"
+                        Icon="@IconType.Outline.Delete">
+                </Button>
+            </Popconfirm>
+        </ActionColumn>
+
+        <div style="position: absolute; top: 100px; left: 50%; transform: translate(-50%, -50%);">
+            <WhatsAppQrCard @ref="_card"/>
+        </div>
+
+    </ChildContent>
+</Table>
+
+<style>
+    .save {
+        margin-right: 8px;
+    }
+</style>
+
+@code{
+    private WhatsAppQrCard _card = new();
+    List<WhatsAppAccountResponse>? _listOfData = new();
+    string _qr = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+            _listOfData = await WhatsAppApi.SetDefaultParameters(_claims).GetAllWhatsAppAccounts();
+
+            _qr = "";
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    private ModalRef _modalRef = null!;
+    private UserClaims _claims = null!;
+
+    private async void Delete(Guid id)
+    {
+        await WhatsAppApi.SetDefaultParameters(_claims).DeleteInstance(id);
+        await OnAfterRenderAsync(true);
+    }
+
+    private async Task GetQr(Guid id, Guid botId)
+    {
+        _qr = await WhatsAppApi.SetDefaultParameters(_claims).GetQrCodeForPhoneNumberBinding(id, botId);
+        _card.SetQrImage(_qr);
+    }
+
+    private async Task OpenTemplate(Guid id)
+    {
+        var templateOptions = new WhatsAppComponentOptions();
+
+        var modalConfig = new ModalOptions
+        {
+            Footer = new OneOf<string, RenderFragment>(),
+            Title = "Instance Creation"
+        };
+
+        _modalRef = await ModalService
+            .CreateModalAsync<WhatsAppCreationModalForm, WhatsAppComponentOptions>
+                (modalConfig, templateOptions);
+
+        _modalRef.OnClose = async () =>
+        {
+            await OnAfterRenderAsync(true);
+        };
+    }
+
+}

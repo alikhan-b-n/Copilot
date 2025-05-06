@@ -1,0 +1,119 @@
+@using Copilot.Admin.Data
+@using Copilot.Admin.Data.Apis
+@using Copilot.Contracts.Responses
+@using Copilot.Contracts.Parameters
+@using Copilot.Admin.Data.Services
+
+@inject ChatBotApi ChatBotApi
+@inject GptModelApi GptModelApi
+@inject ILocalStorageService LocalStorageService
+@inject IMessageService Message
+
+<Card Hoverable Title="@(_model.Title + " | Change settings")">
+
+    <Form Model="@_model"
+          OnFinish="HandleValidSubmit"
+          Layout="vertical">
+
+        <FormItem Label="Name:">
+            <Input @bind-Value="@context.Title"/>
+        </FormItem>
+        
+        <FormItem Label="Timezone:">
+            <Select DataSource="@Timezones.Items"
+                    @bind-Value="@context.Timezone"
+                    ValueName="@nameof(TimezoneItem.Value)"
+                    LabelName="@nameof(TimezoneItem.Title)"
+                    Placeholder="Choose Timezone">
+            </Select>
+        </FormItem>
+
+        <FormItem Label="ChatGpt version:">
+            <Select DataSource="@_gptModels"
+                    @bind-Value="@context.GptModelId"
+                    ValueName="@nameof(GptModelResponse.Id)"
+                    LabelName="@nameof(GptModelResponse.Name)"
+                    Placeholder="Choose GPT Model">
+            </Select>
+        </FormItem>
+        
+        <FormItem Label="Instruction:">
+            <TextArea @bind-Value="@context.PersonalityPrompt" Rows="10" ShowCount></TextArea>
+        </FormItem>
+
+        <FormItem>
+            <Button Type="@ButtonType.Primary" Block HtmlType="submit">
+                Save
+            </Button>
+        </FormItem>
+
+    </Form>
+</Card>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+    private CopilotChatBotUpdateRequest _model = new();
+    private List<GptModelResponse> _gptModels = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+        await LoadChatBotAsync(claims);
+        await LoadGptModelsAsync(claims);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadChatBotAsync(UserClaims claims)
+    {
+        var currentData = await ChatBotApi.SetDefaultParameters(claims).GetById(BotId)
+                          ?? throw new Exception("Failed to load");
+
+        _model = new CopilotChatBotUpdateRequest
+        {
+            PersonalityPrompt = currentData.PersonalityPrompt,
+            GptModelId = currentData.GptModelId,
+            Timezone = currentData.Timezone,
+            Status = currentData.Status,
+            Title = currentData.Title
+        };
+    }
+
+    private async Task LoadGptModelsAsync(UserClaims claims)
+    {
+        _gptModels = await GptModelApi.SetDefaultParameters(claims).GetAll() ?? [];
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            var updatedData = await ChatBotApi.Update(BotId, _model);
+
+            if (updatedData != null)
+            {
+                _model = new CopilotChatBotUpdateRequest
+                {
+                    GptModelId = updatedData.GptModelId,
+                    Timezone = updatedData.Timezone,
+                    Status = updatedData.Status,
+                    Title = updatedData.Title,
+                    PersonalityPrompt = updatedData.PersonalityPrompt
+                };
+            }
+            else
+            {
+                Console.WriteLine("Failed to update personality prompt.");
+            }
+
+            await InvokeAsync(StateHasChanged);
+            await Message.Success("Success");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            await Message.Error("Failed to update");
+        }
+    }
+
+}

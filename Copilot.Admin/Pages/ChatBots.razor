@@ -1,0 +1,119 @@
+@page "/copilots"
+@using OneOf
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Contracts.Parameters
+@using Copilot.Admin.Components.ChatBots
+@inject ModalService ModalService
+@inject ChatBotApi ChatBotApi 
+@inject ILocalStorageService LocalStorageService
+@inject NavigationManager Navigation
+
+<Card Hoverable>
+    <TitleTemplate>
+        <Flex Justify="space-between" Align="center">
+            <span> Copilots </span>
+            <Button Type="@ButtonType.Primary" Color="Color.Green7" OnClick="() => OpenTemplate(Guid.Empty)" Icon="@IconType.Outline.Plus">Create new</Button>
+        </Flex>
+    </TitleTemplate>
+    <ChildContent>
+        <Table DataSource="_listOfData" Size="TableSize.Small" TItem="CopilotChatBotResponse" Bordered>
+            <ChildContent Context="data">
+                <Column TData="string" Title="Id">
+                    <Tooltip Title="@data.Id.ToString("N")">
+                        @(data.Id.ToString("N")[..4] + "...")
+                    </Tooltip>
+                </Column>
+                <Column TData="string" Title="Title">
+                    <a href="copilots/@data.Id.ToString("N")">@data.Title</a>
+                </Column>
+
+                <ActionColumn Style="display: flex; align-content: center; justify-content: end">
+                    <Button Type="@ButtonType.Link"
+                            Color="Color.Gray4"
+                            Icon="@IconType.Outline.Edit"
+                            Style="margin-right: 5px"
+                            OnClick="() => ToBotPage(data.Id)">
+                    </Button>
+
+                    <Popconfirm Title="Delete"
+                                OnConfirm="@(() => Delete(data.Id))"
+                                OkText="Yes, delete"
+                                CancelText="No">
+                        <Button Type="@ButtonType.Primary"
+                                Color="Color.Gray4"
+                                Icon="@IconType.Outline.Delete">
+                        </Button>
+                    </Popconfirm>
+                </ActionColumn>
+
+            </ChildContent>
+        </Table>
+    </ChildContent>
+</Card>
+
+
+<style>
+    .save {
+        margin-right: 8px;
+    }
+</style>
+
+@code{
+
+    private List<CopilotChatBotResponse> _listOfData = new();
+
+    private ModalRef _modalRef = null!;
+    private UserClaims _claims = null!;
+
+    protected override async void OnInitialized()
+    {
+        _claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        _listOfData = await ChatBotApi.SetDefaultParameters(_claims).GetAll() ?? new List<CopilotChatBotResponse>();
+
+        StateHasChanged();
+    }
+
+    private void ToBotPage(Guid id)
+    {
+        Navigation.NavigateTo($"copilots/{id}");
+    }
+
+    private async void Delete(Guid id)
+    {
+        await ChatBotApi.SetDefaultParameters(_claims).Delete(id);
+        OnInitialized();
+    }
+
+    private async Task OpenTemplate(Guid id)
+    {
+        var templateOptions = new ChatBotsComponentOptions
+        {
+            Id = id,
+            Context = _listOfData
+                .Where(x => x.Id.Equals(id))
+                .Select(x => new CopilotChatBotRequest()).FirstOrDefault() ?? new(),
+            IsPost = true
+        };
+
+        var modalConfig = new ModalOptions
+        {
+            Footer = new OneOf<string, RenderFragment>(),
+            Title = "ChatBot Creation"
+        };
+
+        _modalRef = await ModalService
+            .CreateModalAsync<ChatBotCreationModalForm, ChatBotsComponentOptions>
+                (modalConfig, templateOptions);
+
+        _modalRef.OnClose = () =>
+        {
+            OnInitialized();
+            return Task.CompletedTask;
+        };
+    }
+
+}

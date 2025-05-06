@@ -1,0 +1,18 @@
+﻿services:
+  copilot.api:
+    image: copilot.api
+    build:
+      context: .
+      dockerfile: Copilot.Api/Dockerfile
+    ports:
+      - 5262:8080
+    environment:
+      - "ConnectionStrings__NpgSql=${NpgSql}"
+
+  copilot.admin:
+    image: copilot.admin
+    build:
+      context: .
+      dockerfile: Copilot.Admin/Dockerfile
+    ports:
+      - 80:80

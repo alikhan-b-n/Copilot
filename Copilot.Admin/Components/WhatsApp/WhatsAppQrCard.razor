@@ -1,0 +1,60 @@
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Responses
+@inject INotificationService _notice
+
+<div>
+    @if (!string.IsNullOrWhiteSpace(_qr))
+    {
+        if (_qr == "Already binded WhatsApp account")
+        {
+            ShowNotification();
+        }
+        else
+        {
+            <Modal Title="WhatsApp Qr"
+                   centered
+                   Width="300"
+                   Visible="true"
+                   OnCancel="@CloseCard"
+                   Footer=@null>
+                <Image Src=@_qr/>
+            </Modal>
+        }
+    }
+</div>
+
+@code {
+    private string _qr = string.Empty;
+    private bool _loaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _loaded = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void SetQrImage(string qr)
+    {
+        _qr = qr;
+        StateHasChanged();
+    }
+
+    private void CloseCard()
+    {
+        _qr = string.Empty;
+    }
+
+    private async void ShowNotification()
+    {
+        var key = $"open{DateTime.Now}";
+        await _notice.Open(new NotificationConfig()
+        {
+            Message = "Alert",
+            Key = key,
+            Description = _qr
+        });
+    }
+}

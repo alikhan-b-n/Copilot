@@ -1,0 +1,95 @@
+﻿@inherits LayoutComponentBase
+@attribute [Authorize]
+
+@inject NavigationManager NavigationManager
+
+<Layout>
+    <AuthorizeView>
+        <NotAuthorized>
+            <RedirectToLogin/>
+        </NotAuthorized>
+    </AuthorizeView>
+
+    <Header Class="site-layout-background" Style="padding: 0; background: #fff; display: flex; align-items: center;">
+        <Space Align="baseline" Style="width: 100%; display: flex; justify-content: space-between; margin: 0 20px;">
+            <SpaceItem>
+                @if (_collapsed)
+                {
+                    <Button Type="@ButtonType.Primary"
+                            Color="Color.Blue6"
+                            OnClick="Toggle"
+                            Icon="@IconType.Outline.MenuUnfold"
+                            Style="font-size: 30px;">
+                    </Button>
+                }
+                else
+                {
+                    <Button Type="@ButtonType.Primary"
+                            Color="Color.Blue6"
+                            OnClick="Toggle"
+                            Icon="@IconType.Outline.MenuFold"
+                            Style="font-size: 30px;">
+                    </Button>
+                }
+            </SpaceItem>
+            <SpaceItem>
+                <img alt="logo" height="60" src="img/logo/transparent.png">
+            </SpaceItem>
+            <SpaceItem>
+                <Button Type="@ButtonType.Text"
+                        Block
+                        OnClick="SignOut">
+                    Sign Out
+                </Button>
+            </SpaceItem>
+        </Space>
+    </Header>
+    <Layout Style="margin: 24px 16px 0; overflow: initial;">
+        <Sider Style="height: 100vh; margin-right: 10px" Theme="SiderTheme.Light" Width="250" Collapsible CollapsedWidth="0" Collapsed=@_collapsed>
+            <Menu Theme="MenuTheme.Light" Mode="MenuMode.Inline">
+                <MenuItem Key="bots" RouterLink="/copilots">
+                    <Icon Type="profile" Theme="outline"/>
+                    <span class="nav-text">My Copilots</span>
+                </MenuItem>
+                <MenuItem Key="source" RouterLink="/source">
+                    <Icon Type="profile" Theme="outline"/>
+                    <span class="nav-text">My WhatsApp</span>
+                </MenuItem>
+                <MenuItem Key="altegio" RouterLink="/altegio">
+                    <Icon Type="profile" Theme="outline"/>
+                    <span class="nav-text">My Altegio</span>
+                </MenuItem>
+            </Menu>
+        </Sider>
+        <Content>
+            @Body
+        </Content>
+    </Layout>
+    <Footer Style="text-align: center;">@@Copiot - 2024</Footer>
+</Layout>
+
+@code
+{
+    private bool _isLoading = true;
+    bool _collapsed;
+
+    void Toggle()
+    {
+        _collapsed = !_collapsed;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = false;
+
+        await InvokeAsync(StateHasChanged);
+        await base.OnInitializedAsync();
+    }
+
+    private ModalRef _modalRef;
+
+    private void SignOut()
+    {
+        NavigationManager.NavigateTo("/SignOut");
+    }
+}

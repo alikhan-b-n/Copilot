@@ -1,0 +1,43 @@
+@Copilot.Api_HostAddress = http://localhost:5263
+@BotId = 77cc6bf1-b8f6-474c-8ef8-5266c7bac0c0
+
+
+POST http://localhost:5263/api/whatsapp/{{BotId}}
+Accept: application/json
+Content-Type: application/json
+
+{
+  "typeWebhook":"incomingMessageReceived",
+  "timestamp":1714991055769,
+  "instanceData":{
+    "idInstance":33233,
+    "wid":"77073035370@s.whatsapp.net",
+    "typeInstance":"whatsapp"
+  },
+  "idMessage":"3AA039520EC85CED265C",
+  "senderData":{
+    "chatId":"77064064360@s.whatsapp.net",
+    "sender":"77064064360@s.whatsapp.net",
+    "senderName":"Flow English"
+  },
+  "messageData":{
+    "typeMessage":"textMessage",
+    "textMessageData":{
+      "textMessage":"Готово"
+    },
+    "metaDataMessage":{
+      "conversation":"Готово",
+      "messageContextInfo":{
+        "deviceListMetadata":{
+          "senderTimestamp":"1714986776",
+          "recipientKeyHash":"knuGxasNxgJoQQ==",
+          "recipientTimestamp":"1714385940"
+        },
+        "deviceListMetadataVersion":2
+      }
+    }
+  }
+}
+
+
+###

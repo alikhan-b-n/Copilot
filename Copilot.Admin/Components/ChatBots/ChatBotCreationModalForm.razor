@@ -1,0 +1,85 @@
+@using Copilot.Admin.Data.Apis
+@using Copilot.Admin.Data.ComponentOptions
+@using Copilot.Admin.Data.Services
+@using Copilot.Contracts.Parameters
+@using Copilot.Contracts.Responses
+
+@inherits FeedbackComponent<Copilot.Admin.Data.ComponentOptions.ChatBotsComponentOptions>
+@inject MessageService Message
+@inject ChatBotApi ChatBotApi
+@inject GptModelApi GptModelApi
+@inject ILocalStorageService LocalStorageService
+
+<Form
+    @ref="_form"
+    ValidateMode="FormValidateMode.Default"
+    ValidateOnChange="false"
+    Model="@_model.Context"
+    Layout="@FormLayout.Vertical"
+    OnFinish="OnFinish"
+    OnFinishFailed="OnFinishFailed">
+    <FormItem Label="ChatBot's Title:">
+        <Input @bind-Value="@context.Title"/>
+    </FormItem>
+    <FormItem Label="ChatGPT Model">
+        <Select @bind-Value="@context.GptModelId"
+                DataSource="_gptModels"
+                LabelName="@nameof(GptModelResponse.Name)"
+                ValueName="@nameof(GptModelResponse.Id)"
+                DefaultActiveFirstOption="true"
+                EnableSearch
+                Placeholder="Select ChatGPT Model">
+        </Select>
+    </FormItem>
+    <FormItem>
+        <Button Type="@ButtonType.Primary" HtmlType="submit">Create</Button>
+    </FormItem>
+</Form>
+
+<br/>
+<br/>
+
+
+@code {
+    [Parameter] public string RequestUrl { get; set; }
+
+    private Form<CopilotChatBotRequest> _form = null!;
+
+    private ChatBotsComponentOptions _model = null!;
+    private UserClaims _claims = null!;
+    private List<GptModelResponse> _gptModels = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model = base.Options ?? new ChatBotsComponentOptions();
+
+        _claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        _gptModels = await GptModelApi.SetDefaultParameters(_claims).GetAll() ?? [];
+        
+        await InvokeAsync(StateHasChanged);
+        await base.OnInitializedAsync();
+    }
+
+    private async void OnFinish(EditContext editContext)
+    {
+        if (!_form.Validate())
+        {
+            return;
+        }
+
+        var claims = await LocalStorageService.GetAsync<UserClaims>(nameof(UserClaims));
+
+        _model.Context.Status = 1;
+        _model.Context.PersonalityPrompt = string.Empty;
+        
+        await ChatBotApi.SetDefaultParameters(claims).Create(_model.Context);
+
+        _ = base.FeedbackRef.CloseAsync();
+    }
+
+    private void OnFinishFailed(EditContext editContext)
+    {
+        Message.Error("Validation Error");
+    }
+}
