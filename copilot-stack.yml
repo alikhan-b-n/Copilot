@@ -12,6 +12,8 @@ services:
       restart_policy:
         condition: on-failure
       placement:
+        constraints:
+          - node.labels.deploy == true
         preferences:
           - spread: node.labels.api_primary
     networks:
@@ -28,6 +30,8 @@ services:
       restart_policy:
         condition: on-failure
       placement:
+        constraints:
+          - node.labels.deploy == true
         preferences:
           - spread: node.labels.admin_primary
     networks:
