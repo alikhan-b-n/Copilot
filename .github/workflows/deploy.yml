@@ -32,13 +32,3 @@ jobs:
         run: |
           export NpgSql="${{ secrets.NpgSql }}"
           docker stack deploy --with-registry-auth -c copilot-stack.yml copilot
-      - name: Fallback to Backup if Needed
-        run: |
-          ACTUAL_NODE=$(docker service ps copilot_copilot-admin \
-            --filter "desired-state=running" \
-            --format "{{.Node}}")
-          if [ "$ACTUAL_NODE" != "copilot-front" ]; then
-            docker service update \
-              --constraint-rm node.labels.admin_primary==true \
-              copilot_copilot-admin
-          fi
