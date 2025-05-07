@@ -1,0 +1,34 @@
+name: CI/CD on Swarm Manager
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Copilot.Api/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/copilot-api:latest
+      - name: Build & push Admin image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Copilot.Admin/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/copilot-admin:latest
+      - name: Deploy Stack
+        run: |
+          export NpgSql="${{ secrets.NpgSql }}"
+          docker stack deploy --with-registry-auth -c copilot-stack.yml copilot
