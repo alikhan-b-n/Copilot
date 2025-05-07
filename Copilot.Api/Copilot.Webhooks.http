@@ -1,8 +1,8 @@
-@Copilot.Api_HostAddress = http://localhost:5263
+@Copilot.Api_HostAddress = http://165.227.154.109:5263
 @BotId = 77cc6bf1-b8f6-474c-8ef8-5266c7bac0c0
 
 
-POST http://localhost:5263/api/whatsapp/{{BotId}}
+POST http://165.227.154.109:5263/api/whatsapp/{{BotId}}
 Accept: application/json
 Content-Type: application/json
 
