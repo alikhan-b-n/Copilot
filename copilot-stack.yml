@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  copilot-api:
+    image: copilot.api
+    ports:
+      - "5262:8080"
+    environment:
+      ConnectionStrings__NpgSql: ${NpgSql}
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  copilot-admin:
+    image: copilot.admin
+    ports:
+      - "80:80"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
