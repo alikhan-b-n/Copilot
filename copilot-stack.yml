@@ -13,9 +13,8 @@ services:
         condition: on-failure
       placement:
         constraints:
-          - node.role == worker
-        preferences:
-          - spread: node.labels.api_primary
+          - node.labels.api_primary == true    # only back/front primaries
+          - node.labels.backup != true         # exclude backup when primary available
     networks:
       - copilot_net
 
@@ -24,16 +23,15 @@ services:
     ports:
       - "80:80"
     environment:
-      - API_URL=http://165.227.154.109:8080
+      - API_URL=http://165.227.154.109:5462
     deploy:
-      replicas: 1
+      replicas: 2
       restart_policy:
         condition: on-failure
       placement:
         constraints:
-          - node.role == worker
-        preferences:
-          - spread: node.labels.admin_primary
+        - node.labels.admin_primary == true  # only front primaries
+        - node.labels.backup != true         # exclude backup when primary available
     networks:
       - copilot_net
 
