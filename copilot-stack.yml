@@ -5,6 +5,8 @@ services:
     image: kofekofe/copilot-api:latest
     ports:
       - "5262:8080"
+    networks:
+      - copilot_net
     environment:
       ConnectionStrings__NpgSql: ${NpgSql}
     deploy:
@@ -16,7 +18,15 @@ services:
     image: kofekofe/copilot-admin:latest
     ports:
       - "80:80"
+    networks:
+      - copilot_net
+    environment:
+      - API_URL=http://copilot-api:8080
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+
+networks:
+  copilot_net:
+    driver: overlay
