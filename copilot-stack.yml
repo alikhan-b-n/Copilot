@@ -21,7 +21,7 @@ services:
     networks:
       - copilot_net
     environment:
-      - API_URL=http://http://165.227.154.109/:8080
+      - API_URL=http://165.227.154.109:8080
     deploy:
       replicas: 1
       restart_policy:
