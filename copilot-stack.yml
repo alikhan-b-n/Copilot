@@ -13,7 +13,7 @@ services:
         condition: on-failure
       placement:
         constraints:
-          - node.labels.deploy == true
+          - node.role == worker
         preferences:
           - spread: node.labels.api_primary
     networks:
@@ -31,7 +31,7 @@ services:
         condition: on-failure
       placement:
         constraints:
-          - node.labels.deploy == true
+          - node.role == worker
         preferences:
           - spread: node.labels.admin_primary
     networks:
