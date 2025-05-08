@@ -1,27 +1,18 @@
-﻿version: '3.8'
-
-services:
-  api:
-    image: kofekofe/copilot-api:latest
-    container_name: copilot-api
+﻿services:
+  copilot.api:
+    image: copilot.api
+    build:
+      context: .
+      dockerfile: Copilot.Api/Dockerfile
     ports:
-      - "5262:5262"
+      - 5262:8080
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=defaultdb;Username=doadmin;Password=AVNS__1TJsoxWxkC1X6pGm8D;
-    depends_on:
-      - db
+      - "ConnectionStrings__NpgSql=${NpgSql}"
 
-  db:
-    image: postgres:16-alpine
-    container_name: postgres_db
+  copilot.admin:
+    image: copilot.admin
+    build:
+      context: .
+      dockerfile: Copilot.Admin/Dockerfile
     ports:
-      - "25060:5432"
-    environment:
-      POSTGRES_DB: defaultdb
-      POSTGRES_USER: doadmin
-      POSTGRES_PASSWORD: AVNS__1TJsoxWxkC1X6pGm8D
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-volumes:
-  postgres-data:
+      - 80:80
