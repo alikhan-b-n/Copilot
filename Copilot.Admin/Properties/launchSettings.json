@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "applicationUrl": "http://165.227.154.109:5071",
+      "applicationUrl": "https://243c-85-159-27-200.ngrok-free.app",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -24,7 +24,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "applicationUrl": "https://165.227.154.109:7083;http://165.227.154.109:5071",
+      "applicationUrl": "https://243c-85-159-27-200.ngrok-free.app",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
