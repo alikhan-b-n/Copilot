@@ -4,19 +4,18 @@ services:
   copilot-api:
     image: kofekofe/copilot-api:latest
     ports:
-      - "5262:8080"
+      - '5262:5262'
     environment:
-      ConnectionStrings__NpgSql: ${NpgSql}
+      ConnectionStrings__NpgSql: '${NpgSql}'
     deploy:
+      mode: replicated
       replicas: 2
       restart_policy:
         condition: on-failure
       placement:
-        # Service runs only on nodes labeled api_allowed=true (back or backup)
         constraints:
           - node.labels.api_allowed == true
         preferences:
-          # Among allowed nodes, prefer those labeled api_primary=true (back)
           - spread: node.labels.api_primary
     networks:
       - copilot_net
@@ -24,19 +23,18 @@ services:
   copilot-admin:
     image: kofekofe/copilot-admin:latest
     ports:
-      - "80:80"
+      - '80:80'
     environment:
-      - API_URL=http://165.227.154.109:5462
+      API_URL: 'http://165.227.154.109:5462'
     deploy:
+      mode: replicated
       replicas: 2
       restart_policy:
         condition: on-failure
       placement:
-        # Service runs only on nodes labeled admin_allowed=true (front or backup)
         constraints:
           - node.labels.admin_allowed == true
         preferences:
-          # Among allowed nodes, prefer those labeled admin_primary=true (front)
           - spread: node.labels.admin_primary
     networks:
       - copilot_net
