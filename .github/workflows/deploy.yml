@@ -5,15 +5,19 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  build_stage:
+    name: Build Stage
     runs-on: [self-hosted, linux]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build & push API image
         uses: docker/build-push-action@v6
         with:
@@ -21,6 +25,7 @@ jobs:
           file: Copilot.Api/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/copilot-api:latest
+
       - name: Build & push Admin image
         uses: docker/build-push-action@v6
         with:
@@ -28,7 +33,22 @@ jobs:
           file: Copilot.Admin/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/copilot-admin:latest
-      - name: Deploy Stack
+
+  deploy_stage:
+    name: Deploy Stage
+    needs: build_stage
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Deploy Stack to Swarm
         run: |
           export NpgSql="${{ secrets.NpgSql }}"
           docker stack deploy --with-registry-auth -c copilot-stack.yml copilot
