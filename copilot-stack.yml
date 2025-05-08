@@ -26,7 +26,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - API_URL=http://165.227.154.109:5462
+      - API_URL=http://165.227.154.109:5262
     deploy:
       replicas: 2
       restart_policy:
