@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Copilot.Api.Controllers;
 
 [Controller]
-[Authorize]
 public class InstructionFileController : ControllerBase
 {
     private readonly IInstructionFileService _instructionFileService;

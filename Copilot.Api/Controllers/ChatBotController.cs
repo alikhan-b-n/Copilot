@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Copilot.Api.Controllers;
 
 [Controller]
-[Authorize]
 public class ChatBotController : ControllerBase
 {
     private readonly ICopilotChatBotService _chatBotService;

@@ -10,7 +10,6 @@ namespace Copilot.Api.Controllers;
 /// Controller for managing plugins.
 /// </summary>
 [Controller]
-[Authorize]
 public class PluginController(IPluginsManagementService pluginsManagementService) : ControllerBase
 {
     /// <summary>

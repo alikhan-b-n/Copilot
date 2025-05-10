@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Copilot.Api.Controllers;
 
 [Controller]
-[Authorize]
 public class DialoguesController(IDialoguesService dialoguesService) : ControllerBase
 {
     [HttpGet("api/chatbots/{botId:guid}/dialogues")]
