@@ -5,6 +5,7 @@ using Copilot.Admin.Data.Services;
 using Copilot.WhatsApp.Api.Interfaces;
 using Copilot.WhatsApp.Api.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -31,6 +32,16 @@ builder.Services.AddScoped<PluginApi>();
 
 #endregion
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 #region Authentication
 
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
@@ -44,4 +55,6 @@ builder.Services.AddAuthorizationCore();
 
 builder.Services.AddAntDesign();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+await app.RunAsync();
