@@ -32,16 +32,6 @@ builder.Services.AddScoped<PluginApi>();
 
 #endregion
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
-});
-
 #region Authentication
 
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
